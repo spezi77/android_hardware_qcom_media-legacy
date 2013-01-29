@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------------
-Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
+Copyright (c) 2010-2013, 2015, The Linux Foundation. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -8,7 +8,7 @@ modification, are permitted provided that the following conditions are met:
     * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of Code Aurora nor
+    * Neither the name of The Linux Foundation nor
       the names of its contributors may be used to endorse or promote
       products derived from this software without specific prior written
       permission.
@@ -39,6 +39,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <poll.h>
 #define TIMEOUT 5000
 #define MAX_RECON_BUFFERS 4
+/* 1080P video hardware does not support slice size less than */
+/* 1900 bits for multi slice settings in bits mode */
+#define MIN_SLICE_BITS_1080P 1900
 
 void* async_venc_message_thread (void *);
 
@@ -69,6 +72,7 @@ public:
                         unsigned long *,unsigned long);
   bool venc_set_buf_req(unsigned long *,unsigned long *,
                         unsigned long *,unsigned long);
+  bool venc_get_curr_perf_lvl(OMX_PTR);
   bool venc_set_param(void *,OMX_INDEXTYPE);
   bool venc_set_config(void *configData, OMX_INDEXTYPE index);
   bool venc_get_profile_level(OMX_U32 *eProfile,OMX_U32 *eLevel);
@@ -78,6 +82,7 @@ public:
   bool venc_loaded_stop(void);
   bool venc_loaded_start_done(void);
   bool venc_loaded_stop_done(void);
+  bool venc_get_uncache_flag(void);
   OMX_U32 m_nDriver_fd;
   bool m_profile_set;
   bool m_level_set;
@@ -103,7 +108,10 @@ public:
   int m_eProfile;
   int m_eLevel;
   int etb_count;
+  bool m_use_uncache_buffers;
+
 private:
+  class omx_venc *venc_encoder;
   struct venc_basecfg             m_sVenc_cfg;
   struct venc_ratectrlcfg         rate_ctrl;
   struct venc_targetbitrate       bitrate;
@@ -115,6 +123,7 @@ private:
   struct venc_allocatorproperty   m_sInput_buff_property;
   struct venc_allocatorproperty   m_sOutput_buff_property;
   struct venc_sessionqp           session_qp;
+  struct venc_qprange             qp_range;
   struct venc_multiclicecfg       multislice;
   struct venc_entropycfg          entropy;
   struct venc_dbcfg               dbkfilter;
@@ -128,6 +137,7 @@ private:
   bool venc_set_target_bitrate(OMX_U32 nTargetBitrate, OMX_U32 config);
   bool venc_set_ratectrl_cfg(OMX_VIDEO_CONTROLRATETYPE eControlRate);
   bool venc_set_session_qp(OMX_U32 i_frame_qp, OMX_U32 p_frame_qp);
+  bool venc_set_qp_range(OMX_U32 min_qp, OMX_U32 max_qp);
   bool venc_set_extradata(OMX_U32 extra_data);
   bool venc_set_encode_framerate(OMX_U32 encode_framerate, OMX_U32 config);
   bool venc_set_intra_vop_refresh(OMX_BOOL intra_vop_refresh);
@@ -141,6 +151,10 @@ private:
   bool venc_set_voptiming_cfg(OMX_U32 nTimeIncRes);
   void venc_config_print();
   bool venc_set_slice_delivery_mode(OMX_BOOL enable);
+  bool venc_set_inband_video_header(OMX_BOOL enable);
+  bool venc_set_bitstream_restrict_in_vui(OMX_BOOL enable);
+  bool venc_set_picture_order_count_type(OMX_U32 type);
+
 #ifdef MAX_RES_1080P
   OMX_U32 pmem_free();
   OMX_U32 pmem_allocate(OMX_U32 size, OMX_U32 alignment, OMX_U32 count);

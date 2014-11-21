@@ -1,4 +1,4 @@
-ifeq ($(call my-dir),$(call project-path-for,qcom-media)/$(TARGET_BOARD_PLATFORM))
+ifeq ($(call my-dir),$(call project-path-for,qcom-media))
 QCOM_MEDIA_ROOT := $(call my-dir)
 
 ifeq ($(filter qsd8k,$(TARGET_BOARD_PLATFORM)),)
